@@ -1,0 +1,4 @@
+name = "MDPlaygroundCore"
+uuid = "54cba634-c655-4eee-8e47-0d7b0f336f02"
+authors = ["Bon Leif Amalla <bonleifamalla@gmail.com>"]
+version = "0.1.0"
