@@ -2,3 +2,6 @@ name = "MDPlaygroundCore"
 uuid = "54cba634-c655-4eee-8e47-0d7b0f336f02"
 authors = ["Bon Leif Amalla <bonleifamalla@gmail.com>"]
 version = "0.1.0"
+
+[deps]
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"

@@ -1,5 +1,8 @@
 module MDPlaygroundCore
 
-greet() = print("Hello World!")
+using StaticArrays
+
+include("geometries.jl")
+include("phasept.jl")
 
 end # module end
