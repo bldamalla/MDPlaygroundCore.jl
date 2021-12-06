@@ -16,7 +16,8 @@ mutable struct Phase2D{T}
     px::T
     py::T
 end
-dim(::Phase2D) = 2
+dim(::Type{Phase2D}) = 2
+dim(p::Phase2D) = dim(typeof(p))
 
 mutable struct Phase3D{T}
     x::T
@@ -26,7 +27,8 @@ mutable struct Phase3D{T}
     py::T
     pz::T
 end
-dim(::Phase3D) = 3
+dim(::Type{Phase3D}) = 3
+dim(p::Phase3D) = dim(typeof(p))
 
 ## TODO: set up constructors here
 

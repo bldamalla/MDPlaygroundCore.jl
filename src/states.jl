@@ -36,7 +36,7 @@ Check if the particle is charged (has a field `charge`). This may be useful when
 when there is a necessity to check whether an applicable routine applies to a
 `Particle` subtype (namely charged particles).
 """
-ischarged(T::Type{<:Particle}) = :charge in fieldnames(T)
+ischarged(T::Type{<:AbstractParticle}) = :charge in fieldnames(T)
 
 """
     islennardjones(typeof(::Particle))
@@ -45,7 +45,7 @@ Check if the particle has Lennard--Jones parameters ``σ`` and ``ϵ`` as fields.
 This may be useful when it is necessary to check whether routines apply to
 certain `Particle` subtypes (namely Lennard--Jones particles).
 """
-islennardjones(T::Type{<:Particle}) = :σ in fieldnames(T) && :ϵ in fieldnames(T)
+islennardjones(T::Type{<:AbstractParticle}) = :σ in fieldnames(T) && :ϵ in fieldnames(T)
 
 ## TODO: handling promotion of the above common types ??
 
@@ -56,6 +56,9 @@ struct SimpleDynamicsState{P,S,N,T} <: AbstractState
     config::Vector{S}
     simbox::Box{N,T}
 end
+
+Base.length(state::AbstractState) = length(state.particles)
+dim(state::AbstractState) = dim(eltype(config))
 
 """
     Operator <: Any
@@ -86,7 +89,9 @@ abstract type ComposableOperator <: Operator end
 
 Operator representing a potential to be included a force field description.
 """
-abstract type Potential <: AdditiveOperator end
+struct Potential{F} <: AdditiveOperator
+    action::F
+end
 
 """
     Force <: AdditiveOperator
@@ -102,4 +107,15 @@ Operators acting on `AbstractStates` that can be composed, supposedly at least.
 These act as propagators that can be looped.
 """
 abstract type Integrator <: ComposableOperator end
+
+struct KineticEnergy <: AdditiveOperator end
+const kineticenergy = KineticEnergy()
+function (::KineticEnergy)(state::AbstractState)
+    momenta = (conf[:p] for conf in state.config)
+    masses = (particle.mass for particle in state.particles)
+
+    return sum(zip(momenta, masses)) do (p, m)
+        dot(p, p) / 2 / m
+    end
+end
 
