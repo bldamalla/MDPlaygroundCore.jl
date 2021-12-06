@@ -6,8 +6,7 @@ function lennardjones(state::AbstractState)
     ## first is get the configurations, σ, ϵ
     @assert islennardjones(eltype(state.particles))
     positions = [conf[:x] for conf in state.config]
-    σs = [particle.σ for particle in state.particles]
-    ϵs = [particle.ϵ for particle in state.particles]
+    param_tuples = [(part.σ, part.ϵ) for part in state.particles]
 
     N = length(state); T = eltype(σs)
     tmpΔr = @MVector zeros(T, dim(state))
@@ -17,7 +16,8 @@ function lennardjones(state::AbstractState)
         for j in i+1:N
             tmpΔr .= position[i] .- position[j]
             r2 = dot(tmpΔr, tmpΔr)
-            σ, ϵ = ljmix(σs[i], σs[j], ϵs[i], ϵs[j])
+            σ1, ϵ1 = param_tuples[i]; σ2, ϵ2 = param_tuples[j]
+            σ, ϵ = ljmix(σ1, σ2, ϵ1, ϵ2)
             σ2r2 = σ^2 * r2
             acc += ϵ * (σ2r2^6 - σ2r2^3)
         end
@@ -29,18 +29,18 @@ end
 function lennardjones!(forces::Vector{SVector{N}}, state::AbstractState) where N
     @assert islennardjones(eltype(state.particles))
     positions = [conf[:x] for conf in state.config]
-    σs = [particle.σ for particle in state.particles]
-    ϵs = [particle.ϵ for particle in state.particles]
+    param_tuples = [(part.σ, part.ϵ) for part in state.particles]
 
     @assert N == dim(eltype(config))
     len = length(positions); T = eltype(σs)
     tmpΔr = @MVector zeros(T, N)
 
     @inbounds for i in 1:len-1
-        for i in i+1:len
+        for j in i+1:len
             tmpΔr .= positions[i] .- positions[j]
             r2 = dot(tmpΔr, tmpΔr)
-            σ, ϵ = ljmix(σs[i], σs[j], ϵs[i], ϵs[j])
+            σ1, ϵ1 = param_tuples[i]; σ2, ϵ2 = param_tuples[j]
+            σ, ϵ = ljmix(σ1, σ2, ϵ1, ϵ2)
             σr6 = σ^6 / r2^3
             prefac = 24 * ϵ / r2 * σr6 * (1 - 2*σr6)
             forces[i] .+= prefac .* tmpΔr
