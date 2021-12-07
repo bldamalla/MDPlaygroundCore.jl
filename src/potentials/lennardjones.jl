@@ -9,12 +9,11 @@ function lennardjones(state::AbstractState)
     param_tuples = [(part.σ, part.ϵ) for part in state.particles]
 
     N = length(state); T = eltype(σs)
-    tmpΔr = @MVector zeros(T, dim(state))
     acc = zero(T)
 
     @inbounds for i in 1:N-1
         for j in i+1:N
-            tmpΔr .= position[i] .- position[j]
+            tmpΔr = position[i] .- position[j]
             r2 = dot(tmpΔr, tmpΔr)
             σ1, ϵ1 = param_tuples[i]; σ2, ϵ2 = param_tuples[j]
             σ, ϵ = ljmix(σ1, σ2, ϵ1, ϵ2)
@@ -32,8 +31,7 @@ function lennardjones!(forces::Vector{SVector{N}}, state::AbstractState) where N
     param_tuples = [(part.σ, part.ϵ) for part in state.particles]
 
     @assert N == dim(eltype(config))
-    len = length(positions); T = eltype(σs)
-    tmpΔr = @MVector zeros(T, N)
+    len = length(positions)
 
     @inbounds for i in 1:len-1
         for j in i+1:len
