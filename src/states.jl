@@ -89,8 +89,8 @@ abstract type ComposableOperator <: Operator end
 
 Operator representing a potential to be included a force field description.
 """
-struct Potential{F} <: AdditiveOperator
-    action::F
+struct Potential <: AdditiveOperator
+    action::F where F <: Function
 end
 
 """
@@ -99,6 +99,35 @@ end
 Operator representing a force to be included in a force field description.
 """
 abstract type Force <: AdditiveOperator end
+
+## TODO: Define addition of additive operators
+
+"""
+    OperatorSum <: AdditiveOperator
+
+An operator representing the linear combination of other operators.
+"""
+struct OperatorSum{O,N} <: AdditiveOperator
+    actions::NTuple{N,O}
+    coefs::NTuple{N,<:Real}
+end
+Base.eltype(::OperatorSum{O}) where O = O
+Base.length(::OperatorSum{O,N}) where {O,N} = N
+function Base.:+(op1::OperatorSum{O}, op2::OperatorSum{O}) where O
+    N = length(op1) + length(op2)
+    collect_actions = tuple(op1.actions..., op2.actions...)
+    collect_coefs = tuple(op1.coefs..., op2.coefs...)
+    return OperatorSum{O,N}(collect_actions, collect_coefs)
+end
+function Base.:+(op1::OperatorSum{O}, op2::O) where O <: AdditiveOperator
+    N = length(op1) + 1
+    collect_actions = tuple(op1.actions..., op2.action)
+    collect_coefs = tuple(op1.coefs..., op2.coef)
+    return OperatorSum{O,N}(collect_actions, collect_coefs)
+end
+Base.:+(op1::O, op2::OperatorSum{O}) where O = op2 + op1
+Base.:+(op1::O, op2::O) where O <: AdditiveOperator = 
+    OperatorSum{O,2}((op1.action, op2.action), (op1.coef, op2.coef))
 
 """
     Integrator <: ComposableOperator
