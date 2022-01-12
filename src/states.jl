@@ -58,7 +58,7 @@ struct SimpleDynamicsState{P,S,N,T} <: AbstractState
 end
 
 Base.length(state::AbstractState) = length(state.particles)
-dim(state::AbstractState) = dim(eltype(config))
+dim(state::AbstractState) = dim(eltype(state.config))
 
 """
     Operator <: Any
