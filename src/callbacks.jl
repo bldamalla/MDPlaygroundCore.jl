@@ -3,40 +3,18 @@
 
 ## TODO: define behavior of a callback
 
-abstract type PredicateCallback end
-abstract type StochasticCallback <: PredicateCallback end
-
-struct ContinuousStochasticCallback{F,A,C} <: StochasticCallback
-    predicate::F
-    action::A
-    callback::C
-end
-
-function (csc::ContinuousStochasticCallback)(tval, x...)
-    if csc.predicate(tval)
-        csc.action(x)
-        csc.callback(x) ## TODO: figure this out soon
-    end
-end
-
 """
-    IdentityCallback
+    AbstractCallback
 
-A singleton representing an identity callback. Should return the arguments.
-Predicate evaluates to true. Can be used to retrieve the arguments after series
-of callbacks. Note that this stops callback messaging.
+A supertype for implementing callbacks after operations.
 """
-struct IdentityCallback <: PredicateCallback end
-const IdentityCB = IdentityCallback()
-(::IdentityCallback)(x...) = identity(x)
+abstract type AbstractCallback end
 
-"""
-    NullCallback
+### TODO: I guess, define all callbacks first before using typeunions
 
-A singleton representing a null callback. Should return `nothing`.
-Predicate evaluates to true. Can be used to stop callback messaging.
-"""
-struct NullCallBack <: PredicateCallback end
-const NullCB = NullCallback()
-(::NullCallback)(x...) = nothing
+module Callbacks
+
+import ..MDPlaygroundCore: AbstractCallback, AbstractState
+
+end ### module
 
