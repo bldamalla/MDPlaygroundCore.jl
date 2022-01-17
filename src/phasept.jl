@@ -1,5 +1,7 @@
 # phasept.jl -- for phase space points and other important constructs
 
+### TODO: CHANGE THE MODEL ALTOGETHER
+
 """
     dim(::Phase)
     dim(::Region)
@@ -10,7 +12,7 @@ function dim end
 
 ## Phase space points definition
 
-mutable struct Phase2D{T}
+mutable struct Phase2D{T} <: FieldVector{4,T}
     x::T
     y::T
     px::T
@@ -19,7 +21,7 @@ end
 dim(::Type{Phase2D}) = 2
 dim(p::Phase2D) = dim(typeof(p))
 
-mutable struct Phase3D{T}
+mutable struct Phase3D{T} <: FieldVector{6,T}
     x::T
     y::T
     z::T
@@ -36,49 +38,41 @@ function Phase2D(x, y, px, py)
     T = promote_type(typeof(x), typeof(y),
                      typeof(px), typeof(py))
     @assert T <: Real ### make sure there are no units
-    return Phase2D{T}(convert(T, x), convert(T, y),
-                      convert(T, px), convert(T, py))
+    return Phase2D{T}(x, y, px, py)
 end
 
 function Phase3D(x, y, z, px, py, pz)
     T = promote_type(typeof(x), typeof(y), typeof(z),
                      typeof(px), typeof(py), typeof(pz))
     @assert T <: Real ### make sure there are no units
-    return Phase3D{T}(convert(T, x), convert(T, y), convert(T, z),
-                      convert(T, px), convert(T, py), convert(T, pz))
+    return Phase3D{T}(x, y, z, px, py, pz)
 end
 
 ## accessors and mutators
 
 const Phase{T} = Union{Phase2D{T}, Phase3D{T}}
 
-function Base.getindex(phase::Phase{T}, s::Symbol) where T
-    d = dim(phase)
-    if s == :q || s == :x
-        return d == 2 ? SVector{d,T}(phase.x, phase.y) : 
-            SVector{d,T}(phase.x, phase.y, phase.z)
-    elseif s == :p
-        return d == 2 ? SVector{d,T}(phase.px, phase.py) : 
-            SVector{d,T}(phase.px, phase.py, phase.pz)
-    else
-        throw(ArgumentError("Symbol $s cannot be accessed."))
+@generated function Base.getindex(phase::Phase{T}, s::Symbol) where T
+    d = phase <: Phase2D ? 2 : 3
+    return quote
+        offset = _getpartition($d, s)
+        return SVector{$d,T}(_solvepartition(phase, offset))
+    end
+end
+@generated function Base.setindex(phase::Phase{T}, s::Symbol) where T
+    d = phase <: Phase2D ? 2 : 3
+    return quote
+        offset = _getpartition($d, s)
+        phase[offset+1:$d+offset] = val
     end
 end
 
-function Base.setindex!(phase::Phase{T}, val, s::Symbol) where T
-    @assert dim(phase) == length(val)
-    d = dim(phase)
-    if s == :q || s == :x
-        phase.x = convert(T, val[1])
-        phase.y = convert(T, val[2])
-        if d == 3 phase.z = convert(T, val[3]) end
-    elseif s == :p
-        phase.px = convert(T, val[1])
-        phase.py = convert(T, val[2])
-        if d == 3 phase.pz = convert(T, val[3]) end
-    else
-        throw(ArgumentError("Symbol $s cannot be accessed."))
-    end
-    return nothing
+function _solvepartition(phase::Phase, offset)
+    ntuple(i->phase[i+offset], dim(phase))
+end
+function _getpartition(d, s)
+    (s == :x || s == :q) && return 0
+    s == :p || throw(ArgumentError("Cannot access symbol $s."))
+    return d
 end
 
