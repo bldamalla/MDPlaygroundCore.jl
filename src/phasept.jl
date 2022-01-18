@@ -12,7 +12,7 @@ function dim end
 
 ## Phase space points definition
 
-mutable struct Phase2D{T} <: FieldVector{4,T}
+mutable struct Phase2D{T}
     x::T
     y::T
     px::T
@@ -21,7 +21,7 @@ end
 dim(::Type{Phase2D}) = 2
 dim(p::Phase2D) = dim(typeof(p))
 
-mutable struct Phase3D{T} <: FieldVector{6,T}
+mutable struct Phase3D{T}
     x::T
     y::T
     z::T
@@ -53,22 +53,25 @@ end
 const Phase{T} = Union{Phase2D{T}, Phase3D{T}}
 
 @generated function Base.getindex(phase::Phase{T}, s::Symbol) where T
-    d = phase <: Phase2D ? 2 : 3
+    d = dim(phase)
     return quote
         offset = _getpartition($d, s)
         return SVector{$d,T}(_solvepartition(phase, offset))
     end
 end
-@generated function Base.setindex(phase::Phase{T}, s::Symbol) where T
-    d = phase <: Phase2D ? 2 : 3
+@generated function Base.setindex!(phase::Phase{T}, val, s::Symbol) where T
+    d = dim(phase)
+    extra = d == 3 ? :(setfield!(phase, offset+3, T(val[3]))) : :()
     return quote
         offset = _getpartition($d, s)
-        phase[offset+1:$d+offset] = val
+        setfield!(phase, offset+1, T(val[1]))
+        setfield!(phase, offset+2, T(val[2]))
+        $extra
     end
 end
 
 function _solvepartition(phase::Phase, offset)
-    ntuple(i->phase[i+offset], dim(phase))
+    ntuple(i->getfield(phase, offset+i), dim(phase))
 end
 function _getpartition(d, s)
     (s == :x || s == :q) && return 0
