@@ -26,11 +26,11 @@ function (pp::RESPAMomentumPropagator{N})(st::AbstractState) where N
     @assert N == dim(st)
     loc_frc = pp.forces
     Δt = pp.timestep
-    impulses = (force .* Δt ./ 2 for force in loc_frc)
+    impulses = (force * Δt / 2 for force in loc_frc)
 
     conf = st.config
     for (i, Δp) in enumerate(impulses)
-        @inbounds conf[i][:p] = conf[i][:p] .+ Δp
+        @inbounds conf[i][:p] += Δp
     end
 
     if pp.inside isa RESPAPositionPropagator
@@ -42,10 +42,10 @@ function (pp::RESPAMomentumPropagator{N})(st::AbstractState) where N
     end
 
     action!(loc_frc, st)
-    impulses2 = (force .* Δt ./ 2 for force in loc_frc)
+    impulses2 = (force * Δt / 2 for force in loc_frc)
 
     for (i, Δp) in enumerate(impulses2)
-        @inbounds conf[i][:p] = conf[i][:p] .+ Δp
+        @inbounds conf[i][:p] += Δp
     end
 end
 
@@ -56,7 +56,7 @@ end
 function (xp::RESPAPositionPropagator)(st::AbstractState)
     conf = st.config
     Δt = xp.timestep
-    for i in 1:length(conf)
+    for i in eachindex(conf)
         @inbounds conf[i][:x] = fma.(conf[i][:p], Δt, conf[i][:x])
     end
 end

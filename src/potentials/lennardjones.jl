@@ -13,7 +13,7 @@ function lennardjones(state::AbstractState)
 
     @inbounds for i in 1:N-1
         for j in i+1:N
-            tmpΔr = position[i] .- position[j]
+            tmpΔr = position[i] - position[j]
             r2 = dot(tmpΔr, tmpΔr)
             σ1, ϵ1 = param_tuples[i]; σ2, ϵ2 = param_tuples[j]
             σ, ϵ = ljmix(σ1, σ2, ϵ1, ϵ2)
@@ -25,7 +25,7 @@ function lennardjones(state::AbstractState)
     return acc * 4
 end
 
-function lennardjones!(forces::Vector{SVector{N}}, state::AbstractState) where N
+function lennardjones!(forces::Vector{MVector{N}}, state::AbstractState) where N
     @assert islennardjones(eltype(state.particles))
     positions = [conf[:x] for conf in state.config]
     param_tuples = [(part.σ, part.ϵ) for part in state.particles]
@@ -35,14 +35,14 @@ function lennardjones!(forces::Vector{SVector{N}}, state::AbstractState) where N
 
     @inbounds for i in 1:len-1
         for j in i+1:len
-            tmpΔr .= positions[i] .- positions[j]
+            tmpΔr = positions[i] - positions[j]
             r2 = dot(tmpΔr, tmpΔr)
             σ1, ϵ1 = param_tuples[i]; σ2, ϵ2 = param_tuples[j]
             σ, ϵ = ljmix(σ1, σ2, ϵ1, ϵ2)
             σr6 = σ^6 / r2^3
             prefac = 24 * ϵ / r2 * σr6 * (1 - 2*σr6)
-            forces[i] .+= prefac .* tmpΔr
-            forces[j] .-= prefac .* tmpΔr
+            forces[i] .+= prefac * tmpΔr
+            forces[j] .-= prefac * tmpΔr
         end
     end
 
